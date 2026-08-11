@@ -1,8 +1,8 @@
-  variable "vnet" {
+variable "vnet" {
 
-    description = "Azure Virtual Network configuration"
+  description = "Azure Virtual Network configuration"
 
-     type = map(object({
+  type = map(object({
     rg_name       = string
     name          = string
     location      = string
