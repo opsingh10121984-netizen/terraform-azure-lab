@@ -52,6 +52,7 @@ jobs:
       # ==========================================
 
       - name: Terraform Init
+        working-directory: prod/parentmodule
         run: terraform init -backend=false
 
 
@@ -60,10 +61,12 @@ jobs:
       # ==========================================
 
       - name: Terraform Format Check
+        working-directory: prod/parentmodule
         run: terraform fmt -check -recursive
 
 
       - name: Terraform Validate
+        working-directory: prod/parentmodule
         run: terraform validate
 
 
