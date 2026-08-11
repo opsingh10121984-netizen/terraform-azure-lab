@@ -94,6 +94,7 @@ jobs:
       # ==========================================
 
       - name: Verify Terraform Plan
+        working-directory: prod/parentmodule
         run: |
           echo "Current directory:"
           pwd
