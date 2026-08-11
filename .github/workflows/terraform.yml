@@ -13,8 +13,14 @@ jobs:
     name: "Terraform Plan & Apply"
     runs-on: ubuntu-latest
 
-    # Environment tabhi use hoga jab main branch par merge hoga
     environment: ${{ github.ref == 'refs/heads/main' && 'production' || '' }}
+
+    # Env block pure Job ke level par rakhein taaki sabhi steps use kar sakein
+    env:
+      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
 
     steps:
       # 1. Code Checkout
@@ -27,33 +33,25 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # 3. Terraform Environment Variables (Provider Configuration)
-      # Hardcode karne ke bajaye GitHub Secrets se paas kar rahe hain taaki security rahe
-      env:
-        ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-        ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
-        ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-        ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-
-      # 4. Terraform Setup
+      # 3. Setup Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.6.0
 
-      # 5. Terraform Init
+      # 4. Terraform Init
       - name: Terraform Init
         run: terraform init
 
-      # 6. Terraform Format Check
+      # 5. Terraform Format
       - name: Terraform Format
         run: terraform fmt -check
 
-      # 7. Terraform Plan (Feature branch PR + Main branch dono par chalega)
+      # 6. Terraform Plan
       - name: Terraform Plan
         run: terraform plan -out=tfplan
 
-      # 8. Terraform Apply (Sirf PR merge hone par main branch par chalega)
+      # 7. Terraform Apply
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: terraform apply -auto-approve tfplan
