@@ -1,57 +1,112 @@
-name: "Terraform Pipeline with Azure Login"
+name: Terraform Scan & Plan
 
 on:
   push:
     branches:
-      - main
+      - "feature/**"
+
   pull_request:
     branches:
       - main
 
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
 jobs:
-  terraform:
-    name: "Terraform Plan & Apply"
+  terraform-ci:
+
+    name: Terraform Scan & Plan
     runs-on: ubuntu-latest
 
-    environment: ${{ github.ref == 'refs/heads/main' && 'production' || '' }}
-
-    # Env block pure Job ke level par rakhein taaki sabhi steps use kar sakein
-    env:
-      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-      ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
-      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-
     steps:
-      # 1. Code Checkout
-      - name: Checkout Code
+
+      # ==========================================
+      # 1. CHECKOUT REPOSITORY
+      # ==========================================
+
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # 2. Azure Login
+
+      # ==========================================
+      # 2. SETUP TERRAFORM
+      # ==========================================
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+
+      # ==========================================
+      # 3. TERRAFORM VERSION
+      # ==========================================
+
+      - name: Terraform Version
+        run: terraform version
+
+
+      # ==========================================
+      # 4. TERRAFORM INIT
+      # ==========================================
+
+      - name: Terraform Init
+        run: terraform init -backend=false
+
+
+      # ==========================================
+      # 5. SCAN / VALIDATION
+      # ==========================================
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+
+
+      - name: Terraform Validate
+        run: terraform validate
+
+
+      # ==========================================
+      # 6. AZURE LOGIN
+      # ==========================================
+
       - name: Azure Login
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # 3. Setup Terraform
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.6.0
 
-      # 4. Terraform Init
-      - name: Terraform Init
-        run: terraform init
+     # ==========================================
+      # 8. TERRAFORM PLAN
+      # ==========================================
 
-      # 5. Terraform Format
-      - name: Terraform Format
-        run: terraform fmt -check
-
-      # 6. Terraform Plan
       - name: Terraform Plan
         run: terraform plan -out=tfplan
 
-      # 7. Terraform Apply
+
+      # ==========================================
+      # 9. CHECK PLAN FILE
+      # ==========================================
+
+      - name: Verify Terraform Plan
+        run: |
+          echo "Current directory:"
+          pwd
+
+          echo "Files:"
+          ls -la
+
+          echo "Checking tfplan:"
+          test -f tfplan
+
+          echo "tfplan exists successfully."
+
+
+      # ==========================================
+      # 10. TERRAFORM APPLY
+      # ==========================================
+
       - name: Terraform Apply
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: terraform apply -auto-approve tfplan
+        
