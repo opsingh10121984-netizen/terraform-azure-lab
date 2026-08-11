@@ -113,5 +113,6 @@ jobs:
       # ==========================================
 
       - name: Terraform Apply
+        working-directory: prod/parentmodule
         run: terraform apply -auto-approve tfplan
         
