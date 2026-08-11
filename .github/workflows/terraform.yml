@@ -82,6 +82,7 @@ jobs:
       # ==========================================
 
       - name: Terraform Plan
+        working-directory: prod/parentmodule
         run: terraform plan -out=tfplan
 
 
